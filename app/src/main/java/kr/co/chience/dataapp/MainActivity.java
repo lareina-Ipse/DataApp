@@ -32,9 +32,10 @@ import java.util.List;
 import java.util.Vector;
 
 import kr.co.chience.dataapp.adapter.DataAdapter;
+import kr.co.chience.dataapp.baseInterface.BaseInterface;
 import kr.co.chience.dataapp.model.Data;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, BaseInterface {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -57,20 +58,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initViews();
+        initListener();
+        initItems();
+        initProcess();
+    }
+
+
+    @Override
+    public void initViews() {
         button_start = findViewById(R.id.button_start);
         button_stop = findViewById(R.id.button_end);
         listView = findViewById(R.id.listview);
-
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-
-        datas = new Vector<>();
-
-        button_start.setOnClickListener(this);
-        button_stop.setOnClickListener(this);
-
     }
 
+    @Override
+    public void initListener() {
+        button_start.setOnClickListener(this);
+        button_stop.setOnClickListener(this);
+    }
+
+    @Override
+    public void initItems() {
+        datas = new Vector<>();
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+    }
+
+    @Override
+    public void initProcess() {
+
+    }
 
     @Override
     public void onClick(View v) {
@@ -174,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if (uuid.substring(26, 28).equals("ff")) {
             att = "-" + hexStringToInteger(uuid.substring(28, 30)) + hexStringToInteger(uuid.substring(30, 32));
-        } else if (uuid.substring(26, 28).equals("0")){
+        } else if (uuid.substring(26, 28).equals("0")) {
             att = "+" + hexStringToInteger(uuid.substring(26, 28)) + hexStringToInteger(uuid.substring(28, 30)) + hexStringToInteger(uuid.substring(30, 32));
         }
 
@@ -199,7 +217,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         if (uuid.substring(26, 28).equals("ff")) {
             att = "-" + hexStringToInteger(uuid.substring(28, 30)) + hexStringToInteger(uuid.substring(30, 32));
-        } else if (uuid.substring(26, 28).equals("0")){
+        } else if (uuid.substring(26, 28).equals("0")) {
             att = "+" + hexStringToInteger(uuid.substring(26, 28)) + hexStringToInteger(uuid.substring(28, 30)) + hexStringToInteger(uuid.substring(30, 32));
         }
 
