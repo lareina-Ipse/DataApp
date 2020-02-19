@@ -8,18 +8,14 @@ import android.widget.TextView;
 
 import java.util.Vector;
 
-<<<<<<< HEAD
+
 import kr.co.chience.dataapp.R;
 import kr.co.chience.dataapp.model.Data;
 
-public class DataAdapter extends BaseAdapter {
-=======
-import kr.co.chience.dataapp.model.Data;
-import kr.co.chience.dataapp.R;
 
 public class DataAdapter extends BaseAdapter {
 
->>>>>>> origin/master
+
     private Vector<Data> mItems;
     private LayoutInflater mInflater;
 
@@ -72,10 +68,7 @@ public class DataAdapter extends BaseAdapter {
         scanViewHolder.att.setText("ATT :" + mItems.get(position).getAtt());
         scanViewHolder.humInt.setText("HUM1 :" + mItems.get(position).getHumInt());
         scanViewHolder.humDec.setText("HUM2 :" + mItems.get(position).getHumDec());
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/master
         return convertView;
     }
 
@@ -90,8 +83,5 @@ public class DataAdapter extends BaseAdapter {
         public TextView humDec;
     }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/master
 }
