@@ -1,19 +1,28 @@
 package kr.co.chience.dataapp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.neovisionaries.bluetooth.ble.advertising.ADPayloadParser;
 import com.neovisionaries.bluetooth.ble.advertising.ADStructure;
@@ -22,12 +31,7 @@ import com.neovisionaries.bluetooth.ble.advertising.IBeacon;
 import java.util.List;
 import java.util.Vector;
 
-import kr.co.chience.dataapp.adapter.DataAdapter;
-import kr.co.chience.dataapp.baseInterface.BaseInterface;
-import kr.co.chience.dataapp.model.Data;
-import kr.co.chience.dataapp.util.LogUtil;
-
-public class MainActivity extends AppCompatActivity implements BaseInterface, View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener, View.OnClickListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -39,21 +43,54 @@ public class MainActivity extends AppCompatActivity implements BaseInterface, Vi
 
     BluetoothAdapter mBluetoothAdapter;
     BluetoothLeScanner mBluetoothLeScanner;
+    BluetoothGatt mBluetoothGatt;
     BluetoothDevice mBluetoothDevice;
 
     String proximity = "aabbccdd";
+    private boolean isConnected = false;
+
+    String uuid;
+
+    String cdc, mic, voc, co2, temp, att, hum;
+
+    TextView textView_cdc, textView_mic, textView_voc, textView_co2, textView_temp, textView_att, textView_hum;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        initViews();
-        initListener();
-        initItems();
-        initProcess();
+        button_start = findViewById(R.id.button_start);
+        button_stop = findViewById(R.id.button_end);
+        listView = findViewById(R.id.listview);
+
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+
+        datas = new Vector<>();
+        listView.setOnItemClickListener(this);
+
+        button_start.setOnClickListener(this);
+        button_stop.setOnClickListener(this);
+
+        textView_cdc = findViewById(R.id.textview_cdc);
+        textView_mic = findViewById(R.id.textview_mic);
+        textView_voc = findViewById(R.id.textview_voc);
+        textView_co2 = findViewById(R.id.textview_co2);
+        textView_temp = findViewById(R.id.textview_temp);
+        textView_att = findViewById(R.id.textview_att);
+        textView_hum = findViewById(R.id.textview_hum);
+
 
     }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Data data = datas.get(position);
+        mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(data.getAddress());
+        message();
+    }
+
 
     @Override
     public void onClick(View v) {
@@ -65,32 +102,6 @@ public class MainActivity extends AppCompatActivity implements BaseInterface, Vi
                 stopScan();
                 break;
         }
-    }
-
-
-    @Override
-    public void initViews() {
-        button_start = findViewById(R.id.button_start);
-        button_stop = findViewById(R.id.button_end);
-        listView = findViewById(R.id.listview);
-    }
-
-    @Override
-    public void initListener() {
-        button_start.setOnClickListener(this);
-        button_stop.setOnClickListener(this);
-
-    }
-
-    public void initItems() {
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-        datas = new Vector<>();
-    }
-
-    @Override
-    public void initProcess() {
-
     }
 
     private void startScan() {
@@ -111,6 +122,40 @@ public class MainActivity extends AppCompatActivity implements BaseInterface, Vi
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mBluetoothLeScanner.stopScan(mScanCallback);
         }
+    }
+
+    public void message() {
+        Log.e(TAG, "UUID ::::::: " + uuid);
+
+        String cdc1, mic1, voc1, co1, temp1, att1, hum1;
+
+        cdc1 = uuid.substring(9, 11);
+        mic1 = uuid.substring(11, 13);
+        voc1 = uuid.substring(14, 18);
+        co1 = uuid.substring(19, 23);
+        temp1 = uuid.substring(24, 26);
+        att1 = uuid.substring(26, 32);
+        hum1 = uuid.substring(32, 36);
+
+
+        cdc = String.valueOf(Long.parseLong(uuid.substring(9, 11), 16));
+        mic = String.valueOf(Long.parseLong(uuid.substring(11, 13), 16));
+        voc = String.valueOf(Long.parseLong(uuid.substring(14, 16), 16)) + String.valueOf(Long.parseLong(uuid.substring(16, 18), 16));
+        co2 = String.valueOf(Long.parseLong(uuid.substring(19, 21), 16)) + String.valueOf(Long.parseLong(uuid.substring(21, 23), 16));
+        temp = String.valueOf(Long.parseLong(uuid.substring(24, 26), 16));
+        att = String.valueOf(Long.parseLong(uuid.substring(26, 28), 16) + String.valueOf(Long.parseLong(uuid.substring(28, 30), 16) + String.valueOf(Long.parseLong(uuid.substring(30, 32), 16))));
+        hum = String.valueOf(Long.parseLong(uuid.substring(32, 34), 16) + String.valueOf(Long.parseLong(uuid.substring(34, 36), 16)));
+
+
+        textView_cdc.setText("조도: " + cdc1 + ", "+ cdc);
+        textView_mic.setText("음량: " + mic1 + ", "+ mic);
+        textView_voc.setText("유기화합물: " + voc1 + ", " + voc);
+        textView_co2.setText("이산화탄소: " + co1 + ", " + co2);
+        textView_temp.setText("온도: " + temp1 + ", " + temp);
+        textView_att.setText("고도: " + att1 + ", " + att);
+        textView_hum.setText("습도: " + hum1 + ", " +hum);
+
+
     }
 
 
@@ -156,19 +201,16 @@ public class MainActivity extends AppCompatActivity implements BaseInterface, Vi
                 IBeacon iBeacon = (IBeacon) structure;
                 deviceUuid = iBeacon.getUUID().toString();
 
-                if (deviceUuid.startsWith(proximity)) {
-
-                    if (listView.getCount() == 0) {
-                        addValue(deviceUuid);
-                        LogUtil.e(TAG, "UUID :::::::: " + deviceUuid);
-                        LogUtil.e(TAG, "Address :::::::: " + deviceAddress);
-                    } else {
-                        setValue(deviceUuid);
-                        LogUtil.e(TAG, "UUID :::::::: " + deviceUuid);
-                        LogUtil.e(TAG, "Address :::::::: " + deviceAddress);
-                    }
-
+                if (listView.getCount() != 0) {
+                    break;
                 }
+
+                if (deviceUuid.startsWith(proximity)) {
+                    addValue(deviceName, deviceAddress, deviceRssi, deviceUuid);
+                    Log.e(TAG, "Device Uuid" + deviceUuid);
+                    uuid = deviceUuid;
+                }
+
             }
 
         }
@@ -176,58 +218,11 @@ public class MainActivity extends AppCompatActivity implements BaseInterface, Vi
     }
 
     /*ListView Add*/
-    private void addValue(String uuid) {
-        String cdc, mic, voc, co2, temp, att = null, humInt, humDec;
-
-        cdc = hexStringToInteger(uuid.substring(9, 11));
-        mic = hexStringToInteger(uuid.substring(11, 13));
-        voc = hexStringToInteger(uuid.substring(14, 16)) + hexStringToInteger(uuid.substring(16, 18));
-        co2 = hexStringToInteger(uuid.substring(19, 21)) + hexStringToInteger(uuid.substring(21, 23));
-        temp = hexStringToInteger(uuid.substring(24, 26));
-
-        if (uuid.substring(26, 28).equals("ff")) {
-            att = "-" + hexStringToInteger(uuid.substring(28, 30)) + hexStringToInteger(uuid.substring(30, 32));
-        } else if (uuid.substring(26, 28).equals("00")){
-            att = "+" + hexStringToInteger(uuid.substring(28, 30)) + hexStringToInteger(uuid.substring(30, 32));
-        }
-
-        humInt = hexStringToInteger(uuid.substring(32, 34));
-        humDec = hexStringToInteger(uuid.substring(34, 36));
-
-        datas.add(0, new Data(cdc, mic, voc, co2, temp, att, humInt, humDec));
+    private void addValue(String name, String address, String rssi, String UUID) {
+        datas.add(0, new Data(name, address, rssi, UUID));
         dataAdapter = new DataAdapter(datas, getLayoutInflater());
         listView.setAdapter(dataAdapter);
         dataAdapter.notifyDataSetChanged();
-    }
-
-    private void setValue(String uuid) {
-
-        String cdc, mic, voc, co2, temp, att = null, humInt, humDec;
-
-        cdc = hexStringToInteger(uuid.substring(9, 11));
-        mic = hexStringToInteger(uuid.substring(11, 13));
-        voc = hexStringToInteger(uuid.substring(14, 16)) + hexStringToInteger(uuid.substring(16, 18));
-        co2 = hexStringToInteger(uuid.substring(19, 21)) + hexStringToInteger(uuid.substring(21, 23));
-        temp = hexStringToInteger(uuid.substring(24, 26));
-
-
-        if (uuid.substring(26, 28).equals("ff")) {
-            att = "-" + hexStringToInteger(uuid.substring(28, 30)) + hexStringToInteger(uuid.substring(30, 32));
-        } else if (uuid.substring(26, 28).equals("00")){
-            att = "+" + hexStringToInteger(uuid.substring(28, 30)) + hexStringToInteger(uuid.substring(30, 32));
-        }
-
-        humInt = hexStringToInteger(uuid.substring(32, 34));
-        humDec = hexStringToInteger(uuid.substring(34, 36));
-
-        datas.set(0, new Data(cdc, mic, voc, co2, temp, att, humInt, humDec));
-        dataAdapter = new DataAdapter(datas, getLayoutInflater());
-        listView.setAdapter(dataAdapter);
-        dataAdapter.notifyDataSetChanged();
-    }
-
-    public String hexStringToInteger(String hex) {
-        return String.valueOf(Integer.parseInt(hex, 16));
     }
 
 
